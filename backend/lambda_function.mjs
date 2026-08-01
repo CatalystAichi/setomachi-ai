@@ -8,10 +8,11 @@
 // 必須の環境変数（Lambdaコンソールで設定。コードには書かない）:
 //   GEMINI_API_KEY  … backend/.env の値をそのままLambdaの環境変数に設定する
 
-const GEMINI_MODEL = "gemini-3.5-flash"; // 仕様書8-4: Gemini 2.5 Flash（無料枠）
+const GEMINI_MODEL = "gemini-3.5-flash"; // 仕様書8-4: 2026年8月時点でgemini-2.5-flashが新規アカウントで404のためgemini-3.5-flashを使用
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
-const RESPONSE_SCHEMA = {
+// type: "listing"（出品・3-3〜3-5、デフォルト）
+const LISTING_RESPONSE_SCHEMA = {
   type: "OBJECT",
   properties: {
     title: { type: "STRING" },
@@ -23,7 +24,7 @@ const RESPONSE_SCHEMA = {
   propertyOrdering: ["title", "description", "note", "notice"]
 };
 
-function buildPrompt(transcript) {
+function buildListingPrompt(transcript) {
   return `あなたは瀬戸焼の商店街で働く「デジタルの店員さん」です。
 高齢の陶器店主が、自分の作った器について話した内容から、器の商品ページに載せる文章を作ります。
 
@@ -39,6 +40,36 @@ function buildPrompt(transcript) {
 - notice: この新作をパスポートでつながっているお客さんに送る、短いお知らせ文。店主の口調を残しつつ、やさしい言葉で。
 
 出力は日本語のみ。指定した4項目以外は含めないこと。`;
+}
+
+// type: "reply"（返信・3-8〜3-9、A2で追加）
+const REPLY_RESPONSE_SCHEMA = {
+  type: "OBJECT",
+  properties: {
+    reply: { type: "STRING" }
+  },
+  required: ["reply"],
+  propertyOrdering: ["reply"]
+};
+
+function buildReplyPrompt(inquiry, transcript) {
+  return `あなたは瀬戸焼の商店街で働く「デジタルの店員さん」です。
+高齢の陶器店主が、お客さんからの問い合わせに口頭で返事をしました。
+その内容を、お客さんに送る返信メッセージとして整えてください。
+
+お客さんからの問い合わせ:
+「${inquiry}」
+
+店主が話した返事（音声認識のそのままの書き起こし）:
+「${transcript}」
+
+以下のルールを必ず守り、JSONで出力してください。
+- reply: お客さんに送る返信メッセージを1つだけ。店主が話した口調・方言・語尾
+  （例:「〜だよ」「〜でね」）はそのまま活かし、機械的な標準語に直さない。
+  失礼のない形には整えるが、標準語化はしない。その人らしさを残すこと（P5）。
+  専門用語は使わない。
+
+出力は日本語のみ。指定した1項目以外は含めないこと。`;
 }
 
 function jsonResponse(statusCode, payload) {
@@ -75,14 +106,20 @@ export const handler = async (event) => {
       return jsonResponse(500, { error: "GEMINI_API_KEY is not configured" });
     }
 
+    const isReply = body.type === "reply";
+    const prompt = isReply
+      ? buildReplyPrompt((body.inquiry || "").trim(), transcript)
+      : buildListingPrompt(transcript);
+    const schema = isReply ? REPLY_RESPONSE_SCHEMA : LISTING_RESPONSE_SCHEMA;
+
     const geminiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: buildPrompt(transcript) }] }],
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           responseMimeType: "application/json",
-          responseSchema: RESPONSE_SCHEMA,
+          responseSchema: schema,
           temperature: 0.7
         }
       })
