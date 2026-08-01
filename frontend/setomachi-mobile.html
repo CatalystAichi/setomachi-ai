@@ -1,4 +1,3 @@
-5
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -254,10 +253,10 @@
           <div class="img">🍵<div class="ai">AIが作成</div></div>
           <div class="pc-body">
             <div class="tagline"><span class="tag">織部</span><span class="tag">小鉢</span><span class="tag">普段づかい</span></div>
-            <h3>織部の小鉢 ― 普段づかいに ちょうどいい一枚</h3>
-            <p>煮物にも、ちょっとしたおつまみにも。手にすっと馴染む大きさに仕上げました。深い緑の釉薬が料理の色を引き立てます。</p>
+            <h3 id="o-prod-title">織部の小鉢 ― 普段づかいに ちょうどいい一枚</h3>
+            <p id="o-prod-desc">煮物にも、ちょっとしたおつまみにも。手にすっと馴染む大きさに仕上げました。深い緑の釉薬が料理の色を引き立てます。</p>
             <div class="pricebox"><span class="yen">¥2,200</span><span style="font-size:12px;color:#a89e89">（タップで変更）</span></div>
-            <div class="editnote">💬 加藤さんが話した「手にすっと馴染む」を そのまま活かしています。方言や言い回しは 残したまま整えました。</div>
+            <div class="editnote" id="o-prod-note">💬 加藤さんが話した「手にすっと馴染む」を そのまま活かしています。方言や言い回しは 残したまま整えました。</div>
           </div>
         </div>
         <div class="sns">
@@ -416,6 +415,9 @@
   var ownerText="これは織部の小鉢でね。煮物でも、ちょっとしたおつまみでも合うよ。手にすっと馴染む大きさにしたんだ。";
   var replyText="ありがとうね。小鉢はまだあるよ。2つなら取り置きしておくで、いつでも来てちょうだい。";
 
+  // デプロイ後、backend/lambda のLambda Function URLに置き換える（秘密情報ではないので直書きでよい）
+  var GEMINI_ENDPOINT = "https://REPLACE-ME.lambda-url.ap-northeast-1.on.aws/";
+
   function typeOut(el,text,done){
     var i=0;el.textContent='';
     var t=setInterval(function(){
@@ -423,23 +425,129 @@
       if(i>=text.length){clearInterval(t);el.innerHTML=text+'<span class="cursor"></span>';if(done)done();}
     },55);
   }
-  function ownerRecord(){
-    var mic=document.getElementById('o-mic'),lbl=document.getElementById('o-mic-lbl'),
-        waves=document.getElementById('o-waves'),sp=document.getElementById('o-speech');
-    if(mic.classList.contains('rec'))return;
+  // 3-3(o2)のみ本物の音声認識にする。3-8(r2/replyRecord)は今回のスコープ外＝従来の演出のまま。
+  function ownerRecordFallbackDemo(mic,lbl,waves,sp,onFinished){
+    // Web Speech API 非対応ブラウザ向けフォールバック（従来のタイプライター演出）
     mic.classList.add('rec');mic.textContent='●';lbl.textContent='お話しください…（黙ると自動で終わります）';
     waves.style.display='flex';sp.innerHTML='<span class="cursor"></span>';
     typeOut(sp,ownerText,function(){
       setTimeout(function(){
         mic.classList.remove('rec');waves.style.display='none';lbl.textContent='おわりました';
-        setTimeout(function(){go('owner','o3');runGen();},600);
+        setTimeout(function(){onFinished(ownerText);},600);
       },700);
     });
   }
-  function runGen(){
+
+  function ownerRecord(){
+    var mic=document.getElementById('o-mic'),lbl=document.getElementById('o-mic-lbl'),
+        waves=document.getElementById('o-waves'),sp=document.getElementById('o-speech');
+    if(mic.classList.contains('rec'))return;
+
+    function finish(text){ go('owner','o3'); runGen(text); }
+
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR){
+      // 非対応（例:古いSafari）の場合はデモ演出にフォールバック(P4のタップ1回操作は変わらない)
+      ownerRecordFallbackDemo(mic,lbl,waves,sp,finish);
+      return;
+    }
+
+    // 注意: iPhone/Safari の webkitSpeechRecognition は continuous 認識が不安定で、
+    // 数十秒で自動的に切れたり、iOSのバージョンによっては動作しないことがある。
+    // 本番前に必ず実機（特にSafari）で確認すること。非対応・認識失敗時は
+    // 上のフォールバック演出（タイプライター表示）に自動で切り替わるので、
+    // デモが完全に止まることは避けられる想定。
+    var recognition = new SR();
+    recognition.lang = 'ja-JP';
+    recognition.interimResults = true;
+    recognition.continuous = true;
+
+    var finalText = '';
+    var silenceTimer = null, maxTimer = null, stopped = false;
+
+    function renderSpeech(interim){
+      var safe=(finalText+interim).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+      sp.innerHTML = safe + '<span class="cursor"></span>';
+    }
+    function armSilenceTimer(){
+      clearTimeout(silenceTimer);
+      silenceTimer = setTimeout(function(){ safeStop(); }, 2500); // P4: 数秒の無音で自動終了
+    }
+    function safeStop(){
+      if(stopped)return; stopped=true;
+      clearTimeout(silenceTimer);clearTimeout(maxTimer);
+      try{ recognition.stop(); }catch(e){}
+    }
+    function resetIdle(msg){
+      mic.classList.remove('rec');mic.textContent='🎤';
+      waves.style.display='none';
+      lbl.textContent='1回 おすと はじまります';
+      sp.innerHTML = '<span style="color:#a89e89">'+msg+'</span>';
+    }
+
+    recognition.onresult = function(e){
+      var interim='';
+      for(var i=e.resultIndex;i<e.results.length;i++){
+        var r=e.results[i];
+        if(r.isFinal){ finalText += r[0].transcript; } else { interim += r[0].transcript; }
+      }
+      renderSpeech(interim);
+      armSilenceTimer();
+    };
+    recognition.onerror = function(){
+      stopped=true; clearTimeout(silenceTimer);clearTimeout(maxTimer);
+      resetIdle('うまく聞き取れませんでした。もう一度 マイクを おしてください');
+    };
+    recognition.onend = function(){
+      clearTimeout(silenceTimer);clearTimeout(maxTimer);
+      if(!finalText.trim()){
+        resetIdle('こえが きこえませんでした。もう一度 マイクを おしてください');
+        return;
+      }
+      mic.classList.remove('rec');waves.style.display='none';lbl.textContent='おわりました';
+      setTimeout(function(){ finish(finalText.trim()); },600);
+    };
+
+    mic.classList.add('rec');mic.textContent='●';lbl.textContent='お話しください…（黙ると自動で終わります）';
+    waves.style.display='flex';sp.innerHTML='<span class="cursor"></span>';
+    try{
+      recognition.start();
+      armSilenceTimer();
+      maxTimer=setTimeout(safeStop,15000); // 無音検知が効かない場合の保険（最大15秒で強制終了）
+    }catch(e){
+      resetIdle('マイクを つかえませんでした。もう一度 おしてください');
+    }
+  }
+
+  function runGen(transcript){
     var steps=['写真を ととのえています…','ことばから 紹介文を つくっています…','お知らせ文と SNS投稿を つくっています…'];
     var i=0,el=document.getElementById('o-genstep');
-    var t=setInterval(function(){i++;if(i<steps.length){el.textContent=steps[i];}else{clearInterval(t);go('owner','o4');}},900);
+    var stepTimer=setInterval(function(){i++;if(i<steps.length){el.textContent=steps[i];}},900);
+
+    function finishGen(data){
+      clearInterval(stepTimer);
+      if(data){
+        document.getElementById('o-prod-title').textContent = data.title;
+        document.getElementById('o-prod-desc').textContent = data.description;
+        document.getElementById('o-prod-note').innerHTML = '💬 '+data.note;
+        window.__lastOwnerNotice = data.notice; // 客への通知文（現行UIには未表示。連携実装時に使用）
+      }
+      go('owner','o4');
+    }
+
+    // Lambda未設定、または呼び出し失敗時は既存のデモ用固定文言のまま o4 へ進む（本番当日の通信トラブル対策）
+    if(!GEMINI_ENDPOINT || GEMINI_ENDPOINT.indexOf('REPLACE-ME')>=0){
+      setTimeout(function(){finishGen(null);},1800);
+      return;
+    }
+    fetch(GEMINI_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({transcript:transcript})
+    }).then(function(res){
+      if(!res.ok) throw new Error('gemini lambda error');
+      return res.json();
+    }).then(finishGen).catch(function(){ finishGen(null); });
   }
   function replyRecord(){
     var mic=document.getElementById('r-mic'),lbl=document.getElementById('r-mic-lbl'),
@@ -480,4 +588,3 @@
 </script>
 </body>
 </html>
-コンテンツはユーザーが作成したもので、未検証です。
