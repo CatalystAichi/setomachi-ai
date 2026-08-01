@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>せとまち常連化AI プロトタイプ</title>
+<title>せとまち常連化AI</title>
 <style>
   :root{
     --oribe:#4a5d3a; --oribe-light:#6b8055; --clay:#b5623c; --clay-soft:#c9835f;
@@ -188,12 +188,37 @@
 
   .banner{flex-shrink:0;background:rgba(43,38,32,.92);color:#f3efe6;font-size:12px;text-align:center;padding:9px 12px;line-height:1.5;}
   .banner b{color:#e8c977;}
+
+  /* A4: イントロ画面（既存の画面遷移とは独立したオーバーレイ） */
+  .intro-overlay{position:fixed;inset:0;z-index:999;
+    background:linear-gradient(160deg,var(--oribe),#3a4a2d 55%,#2b2620);
+    display:flex;align-items:center;justify-content:center;padding:28px;}
+  .intro-overlay.hide{display:none;}
+  .intro-card{background:#fff;border-radius:24px;padding:38px 28px 32px;max-width:320px;width:100%;
+    text-align:center;box-shadow:0 18px 40px -12px rgba(0,0,0,.5);position:relative;overflow:hidden;}
+  .intro-card::after{content:"陶";position:absolute;right:-10px;bottom:-30px;font-size:130px;
+    font-family:"Yu Mincho",serif;color:var(--oribe);opacity:.06;}
+  .intro-mark{font-size:38px;margin-bottom:10px;}
+  .intro-title{font-family:"Yu Mincho",serif;font-size:23px;font-weight:600;color:var(--oribe);margin-bottom:16px;position:relative;}
+  .intro-copy{font-size:14.5px;line-height:1.9;color:#5f5749;margin-bottom:18px;position:relative;}
+  .intro-guide{font-size:12.5px;line-height:1.9;color:#8a8071;background:#faf7f0;border-radius:12px;
+    padding:12px 14px;margin-bottom:26px;position:relative;}
 </style>
 </head>
 <body>
 
+<div id="intro-overlay" class="intro-overlay">
+  <div class="intro-card">
+    <div class="intro-mark">🏺</div>
+    <div class="intro-title">せとまち常連化AI</div>
+    <p class="intro-copy">瀬戸のやきもの店主と、来場したお客さんをつなぐAIサービスです。</p>
+    <p class="intro-guide">上のタブで店主側・客側を切り替えられます。<br>まずは下のボタンから、店主側の体験をご覧ください。</p>
+    <button id="intro-start" class="btn primary">はじめる</button>
+  </div>
+</div>
+
 <div class="topbar">
-  <div class="title">せとまち常連化AI<small>デジタルの店員さん・プロトタイプ</small></div>
+  <div class="title">せとまち常連化AI<small>デジタルの店員さん</small></div>
   <div class="switch">
     <button id="sw-owner" class="active" data-view="owner">🏺 店主</button>
     <button id="sw-guest" data-view="guest">🎫 客</button>
@@ -748,6 +773,15 @@
   });
 
   switchView('owner');
+
+  // A4: イントロ画面。既存のgo()/switchView()/dataact経由の遷移ロジックには一切乗らず、
+  // オーバーレイのdisplayを切り替えるだけの独立した処理とする。
+  var introStart=document.getElementById('intro-start');
+  if(introStart){
+    introStart.addEventListener('click',function(){
+      document.getElementById('intro-overlay').classList.add('hide');
+    });
+  }
 })();
 </script>
 </body>
