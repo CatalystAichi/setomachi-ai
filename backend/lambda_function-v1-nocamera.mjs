@@ -1,4 +1,4 @@
-// Gemini APIを呼び出し、店主の音声認識テキスト（＋撮影した器の写真）から
+// Gemini APIを呼び出し、店主の音声認識テキストから
 // 商品タイトル・紹介文・編集メモ・客への通知文を生成するLambdaハンドラ。
 // AWS Lambda Function URLから直接呼び出される想定（API Gatewayは使わない）。
 // Node.js 20.x以降のグローバルfetchのみを使い、外部依存パッケージは無し。
@@ -7,19 +7,9 @@
 //
 // 必須の環境変数（Lambdaコンソールで設定。コードには書かない）:
 //   GEMINI_API_KEY  … backend/.env の値をそのままLambdaの環境変数に設定する
-//
-// B1(カメラ機能・A案): フロントから { transcript, image:{mimeType,data} } の形で
-// 送られてきた場合、image をGeminiのマルチモーダル入力として一緒に渡す。
-// image が無い場合（カメラ非対応・撮影なし等）は、これまで通りtranscriptのみで
-// 生成する。どちらの場合も出力スキーマ・呼び出し方法は変えない後方互換の拡張。
 
 const GEMINI_MODEL = "gemini-3.5-flash"; // 仕様書8-4: 2026年8月時点でgemini-2.5-flashが新規アカウントで404のためgemini-3.5-flashを使用
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-
-// 画像として許容するMIMEタイプ（撮影はJPEGのみだが、念のため主要形式を許容）
-const ALLOWED_IMAGE_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
-// Lambda全体のペイロード上限(6MB)とGemini側の上限(20MB)を踏まえ、余裕を持って安全側に制限
-const MAX_IMAGE_BASE64_LENGTH = 4 * 1024 * 1024; // 約4MB相当（base64文字列の長さ）
 
 // type: "listing"（出品・3-3〜3-5、デフォルト）
 const LISTING_RESPONSE_SCHEMA = {
@@ -34,15 +24,12 @@ const LISTING_RESPONSE_SCHEMA = {
   propertyOrdering: ["title", "description", "note", "notice"]
 };
 
-function buildListingPrompt(transcript, hasImage) {
-  var imageInstruction = hasImage
-    ? "\n\n添付した写真には、店主が今回出品しようとしている器が写っています。写真から読み取れる色・形・釉薬の様子・サイズ感なども踏まえて、より具体的で説得力のある紹介文にしてください。ただし写真から確実に読み取れない情報（正確な寸法や価格など）を断定的に書かないこと。"
-    : "";
+function buildListingPrompt(transcript) {
   return `あなたは瀬戸焼の商店街で働く「デジタルの店員さん」です。
 高齢の陶器店主が、自分の作った器について話した内容から、器の商品ページに載せる文章を作ります。
 
 店主が話した内容（音声認識のそのままの書き起こし）:
-「${transcript}」${imageInstruction}
+「${transcript}」
 
 以下のルールを必ず守り、JSONで出力してください。
 - title: 器のタイトル。20文字前後。商品名として自然な一文。
@@ -93,19 +80,6 @@ function jsonResponse(statusCode, payload) {
   };
 }
 
-// リクエストで受け取った image オブジェクトを検証する。
-// 不正・非対応・サイズ超過の場合は null を返し（画像なしとして続行）、
-// 例外は投げない（B1: 画像処理が壊れてもデモ全体を止めないため）。
-function sanitizeImage(image) {
-  if (!image || typeof image !== "object") return null;
-  var mimeType = image.mimeType;
-  var data = image.data;
-  if (typeof mimeType !== "string" || !ALLOWED_IMAGE_MIME_TYPES.has(mimeType)) return null;
-  if (typeof data !== "string" || data.length === 0) return null;
-  if (data.length > MAX_IMAGE_BASE64_LENGTH) return null;
-  return { mimeType: mimeType, data: data };
-}
-
 export const handler = async (event) => {
   try {
     const method = event?.requestContext?.http?.method;
@@ -133,24 +107,16 @@ export const handler = async (event) => {
     }
 
     const isReply = body.type === "reply";
-    const image = isReply ? null : sanitizeImage(body.image); // 返信フローでは画像は扱わない
     const prompt = isReply
       ? buildReplyPrompt((body.inquiry || "").trim(), transcript)
-      : buildListingPrompt(transcript, !!image);
+      : buildListingPrompt(transcript);
     const schema = isReply ? REPLY_RESPONSE_SCHEMA : LISTING_RESPONSE_SCHEMA;
-
-    // B1: 画像がある場合は parts に inline_data を追加（マルチモーダル入力）。
-    // 無い場合はこれまで通りテキストのみの parts で、挙動は一切変わらない。
-    const parts = [{ text: prompt }];
-    if (image) {
-      parts.push({ inline_data: { mime_type: image.mimeType, data: image.data } });
-    }
 
     const geminiRes = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [{ role: "user", parts: parts }],
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: {
           responseMimeType: "application/json",
           responseSchema: schema,
