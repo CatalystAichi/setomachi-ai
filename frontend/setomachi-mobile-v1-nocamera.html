@@ -76,26 +76,15 @@
 
   .camera{background:#2b2620;border-radius:20px;flex:1;display:flex;flex-direction:column;
     align-items:center;justify-content:center;position:relative;min-height:320px;overflow:hidden;}
-  .camera video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-  .camera canvas{display:none;}
-  .camera .dish{font-size:130px;filter:drop-shadow(0 12px 20px rgba(0,0,0,.4));position:relative;z-index:1;}
-  .camera .frameline{position:absolute;inset:28px;border:2px solid rgba(255,255,255,.35);border-radius:14px;z-index:2;pointer-events:none;}
-  .camera .cap{position:absolute;bottom:18px;color:rgba(255,255,255,.75);font-size:13px;z-index:2;}
-  .camera .camerr{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;
-    gap:10px;padding:24px;text-align:center;z-index:3;background:#2b2620;}
-  .camera .camerr .ce-ic{font-size:40px;}
-  .camera .camerr .ce-t{color:#fff;font-size:14px;line-height:1.7;}
+  .camera .dish{font-size:130px;filter:drop-shadow(0 12px 20px rgba(0,0,0,.4));}
+  .camera .frameline{position:absolute;inset:28px;border:2px solid rgba(255,255,255,.35);border-radius:14px;}
+  .camera .cap{position:absolute;bottom:18px;color:rgba(255,255,255,.75);font-size:13px;}
   .shutter{width:74px;height:74px;border-radius:50%;background:#fff;border:5px solid var(--ash);margin:22px auto 0;cursor:pointer;transition:.12s;}
   .shutter:active{transform:scale(.9);}
 
-  .photo-preview{border-radius:20px;overflow:hidden;flex:1;min-height:320px;background:#2b2620;
-    display:flex;align-items:center;justify-content:center;position:relative;}
-  .photo-preview img{width:100%;height:100%;object-fit:cover;}
-
   .voicewrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;text-align:center;}
   .dishthumb{width:130px;height:130px;border-radius:20px;background:linear-gradient(145deg,#eee6d6,#dccfb6);
-    display:flex;align-items:center;justify-content:center;font-size:72px;box-shadow:inset 0 3px 10px rgba(0,0,0,.08);overflow:hidden;}
-  .dishthumb img{width:100%;height:100%;object-fit:cover;}
+    display:flex;align-items:center;justify-content:center;font-size:72px;box-shadow:inset 0 3px 10px rgba(0,0,0,.08);}
   .micbtn{width:104px;height:104px;border-radius:50%;background:var(--clay);color:#fff;border:0;font-size:44px;
     cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 26px -6px rgba(181,98,60,.6);transition:.15s;}
   .micbtn:active{transform:scale(.94);}
@@ -122,9 +111,8 @@
   .genwrap .step{font-size:13px;color:#a89e89;}
 
   .prodcard{background:#fff;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 4px 14px -8px rgba(0,0,0,.2);}
-  .prodcard .img{height:180px;background:linear-gradient(145deg,#e9e0cd,#d5c6ab);display:flex;align-items:center;justify-content:center;font-size:96px;position:relative;overflow:hidden;}
-  .prodcard .img img{width:100%;height:100%;object-fit:cover;}
-  .prodcard .img .ai{position:absolute;top:12px;right:12px;background:rgba(74,93,58,.9);color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;z-index:1;}
+  .prodcard .img{height:180px;background:linear-gradient(145deg,#e9e0cd,#d5c6ab);display:flex;align-items:center;justify-content:center;font-size:96px;position:relative;}
+  .prodcard .img .ai{position:absolute;top:12px;right:12px;background:rgba(74,93,58,.9);color:#fff;font-size:11px;font-weight:700;padding:5px 10px;border-radius:999px;}
   .prodcard .pc-body{padding:18px;}
   .prodcard h3{font-family:"Yu Mincho",serif;font-size:18px;color:var(--sumi);margin-bottom:9px;line-height:1.4;}
   .prodcard p{font-size:14px;line-height:1.95;color:#5f5749;margin-bottom:12px;}
@@ -232,27 +220,9 @@
     <div class="scr" data-scr="o1">
       <div class="appbar"><button class="back" data-go="owner:o0">‹</button><div class="brand">器を うつす</div></div>
       <div class="body">
-        <div class="camera" id="o-camera">
-          <video id="o-camera-video" autoplay playsinline muted></video>
-          <canvas id="o-camera-canvas"></canvas>
-          <div class="dish" id="o-camera-fallback-icon">🍵</div>
-          <div class="frameline"></div>
-          <div class="cap">器を まんなかに いれてください</div>
-          <div class="camerr" id="o-camera-err">
-            <div class="ce-ic">🚫</div>
-            <div class="ce-t">カメラが つかえませんでした。<br>下のボタンで すすめます</div>
-          </div>
-        </div>
-        <div class="shutter" data-act="ownerCapture"></div>
-        <div class="hint" id="o-camera-hint">まるいボタンを おすと しゃしんが とれます</div>
-      </div>
-    </div>
-
-    <div class="scr" data-scr="o1b">
-      <div class="appbar"><button class="back" data-go="owner:o1">‹</button><div class="brand">この しゃしんで いいですか？</div></div>
-      <div class="body">
-        <div class="photo-preview"><img id="o-photo-preview-img" alt="撮影した器の写真"></div>
-        <div class="btn-row"><button class="btn ghost" data-go="owner:o1">とりなおす</button><button class="btn primary" data-go="owner:o2">これでいい</button></div>
+        <div class="camera"><div class="frameline"></div><div class="dish">🍵</div><div class="cap">器を まんなかに いれてください</div></div>
+        <div class="shutter" data-go="owner:o2"></div>
+        <div class="hint">まるいボタンを おすと しゃしんが とれます</div>
       </div>
     </div>
 
@@ -260,7 +230,7 @@
       <div class="appbar"><button class="back" data-go="owner:o1">‹</button><div class="brand">この器について はなす</div></div>
       <div class="body">
         <div class="voicewrap">
-          <div class="dishthumb" id="o-dishthumb">🍵</div>
+          <div class="dishthumb">🍵</div>
           <div id="o-speech" class="speech"><span style="color:#a89e89">ボタンを おして はなしてください</span></div>
           <div id="o-waves" class="waves" style="display:none"><span></span><span></span><span></span><span></span><span></span><span></span></div>
           <button id="o-mic" class="micbtn" data-act="ownerRecord">🎤</button>
@@ -280,7 +250,7 @@
       <div class="appbar"><div class="brand">できました。これで いいですか？</div></div>
       <div class="body">
         <div class="prodcard">
-          <div class="img" id="o-prod-img">🍵<div class="ai">AIが作成</div></div>
+          <div class="img">🍵<div class="ai">AIが作成</div></div>
           <div class="pc-body">
             <div class="tagline"><span class="tag">織部</span><span class="tag">小鉢</span><span class="tag">普段づかい</span></div>
             <h3 id="o-prod-title">織部の小鉢 ― 普段づかいに ちょうどいい一枚</h3>
@@ -441,8 +411,6 @@
     var t=screen.querySelector('[data-scr="'+scr+'"]');
     if(t){t.classList.add('on');screen.scrollTop=0;}
     if(side==='guest'&&scr==='g2'){renderPassport();}
-    // カメラ画面(o1)に入るときは起動、離れるときは必ず停止（バッテリー消費・多重起動防止）
-    if(side==='owner'&&scr==='o1'){ startCamera(); } else { stopCamera(); }
   }
 
   var ownerText="これは織部の小鉢でね。煮物でも、ちょっとしたおつまみでも合うよ。手にすっと馴染む大きさにしたんだ。";
@@ -452,107 +420,6 @@
 
   // デプロイ後、backend/lambda のLambda Function URLに置き換える（秘密情報ではないので直書きでよい）
   var GEMINI_ENDPOINT = "https://bqkyyohai4yyhtwirceei4gz6i0isype.lambda-url.ap-northeast-1.on.aws/";
-
-  // ==========================================================
-  // B1: カメラ機能（実機のカメラを起動し、静止画を撮影する）
-  // 対象は店主側の出品フロー(o1)のみ。QR読み取り(g0)は演出のまま変更しない。
-  // 方針：
-  //  - getUserMedia非対応 / 権限拒否 / エラー時は、これまで通り絵文字🍵のダミー表示のまま
-  //    シャッターを押せば進める（デモが止まらないことを最優先）。
-  //  - 撮った写真はBase64のdataURLとしてメモリ上に保持し、確認画面(o1b)→しゃべる画面(o2)の
-  //    サムネイル→生成結果(o4)の商品画像、まで一貫して使い回す。
-  //  - Gemini送信（A案）は runGen() 内で、写真があれば image として一緒に送る。
-  //    Lambda側が image 未対応でも壊れないよう、image は「あれば付加する」だけの拡張とする。
-  // ==========================================================
-  var ownerStream = null;
-  var ownerPhotoDataUrl = null; // 直近に撮影した写真（dataURL, image/jpeg;base64）。未撮影時はnull。
-
-  function cameraSupported(){
-    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-  }
-
-  function startCamera(){
-    var video=document.getElementById('o-camera-video');
-    var fallbackIcon=document.getElementById('o-camera-fallback-icon');
-    var errBox=document.getElementById('o-camera-err');
-    var hint=document.getElementById('o-camera-hint');
-
-    // すでに起動中なら何もしない
-    if(ownerStream) return;
-
-    errBox.style.display='none';
-    video.style.display='none';
-    fallbackIcon.style.display='block';
-
-    if(!cameraSupported()){
-      // 非対応ブラウザ：ダミー表示のまま。ヒントだけ差し替えてデモ続行を明示。
-      hint.textContent='まるいボタンを おすと しゃしんが とれます（カメラ未対応のため見本表示）';
-      return;
-    }
-
-    navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:{ ideal:'environment' } }, // リアカメラ優先。PCではフロントカメラにフォールバックされる
-      audio:false
-    }).then(function(stream){
-      ownerStream = stream;
-      video.srcObject = stream;
-      video.style.display='block';
-      fallbackIcon.style.display='none';
-      hint.textContent='まるいボタンを おすと しゃしんが とれます';
-    }).catch(function(err){
-      // 権限拒否・カメラなし・iOSのHTTPS制約など。デモを止めずダミー表示にフォールバック。
-      ownerStream=null;
-      video.style.display='none';
-      fallbackIcon.style.display='block';
-      errBox.style.display='flex';
-      hint.textContent='まるいボタンを おすと しゃしんが とれます（見本表示ですすめます）';
-    });
-  }
-
-  function stopCamera(){
-    if(ownerStream){
-      ownerStream.getTracks().forEach(function(t){ t.stop(); });
-      ownerStream=null;
-    }
-  }
-
-  function ownerCapture(){
-    var video=document.getElementById('o-camera-video');
-    var canvas=document.getElementById('o-camera-canvas');
-
-    if(ownerStream && video.videoWidth){
-      // 実際のカメラ映像から静止画を切り出す
-      var w=video.videoWidth, h=video.videoHeight;
-      canvas.width=w; canvas.height=h;
-      var ctx=canvas.getContext('2d');
-      ctx.drawImage(video,0,0,w,h);
-      try{
-        ownerPhotoDataUrl = canvas.toDataURL('image/jpeg',0.85);
-      }catch(e){
-        ownerPhotoDataUrl = null; // 稀にcanvasがtainted等で失敗する場合はダミーのまま進める
-      }
-    }else{
-      // カメラ非対応・エラー時：写真なし（ダミー絵文字のまま）で進める
-      ownerPhotoDataUrl = null;
-    }
-
-    applyPhotoToUI();
-    go('owner','o1b');
-  }
-
-  // 撮影した写真（あれば）を、確認画面・しゃべる画面・結果画面のサムネイルへ反映する
-  function applyPhotoToUI(){
-    var previewImg=document.getElementById('o-photo-preview-img');
-    var dishThumb=document.getElementById('o-dishthumb');
-    if(ownerPhotoDataUrl){
-      previewImg.src=ownerPhotoDataUrl;
-      dishThumb.innerHTML='<img src="'+ownerPhotoDataUrl+'" alt="撮影した器">';
-    }else{
-      // 写真がない場合の確認画面は、見本の絵文字表示で代替（撮り直しはo1に戻るだけなので支障なし）
-      previewImg.removeAttribute('src');
-      dishThumb.innerHTML='🍵';
-    }
-  }
 
   function typeOut(el,text,done){
     var i=0;el.textContent='';
@@ -666,16 +533,6 @@
     renderPrice();
   }
 
-  // 生成結果カード(o4)の画像部分に、撮影した写真があればそれを表示する（なければ従来の絵文字のまま）
-  function applyResultImage(){
-    var imgBox=document.getElementById('o-prod-img');
-    if(ownerPhotoDataUrl){
-      imgBox.innerHTML='<img src="'+ownerPhotoDataUrl+'" alt="出品した器の写真"><div class="ai">AIが作成</div>';
-    }else{
-      imgBox.innerHTML='🍵<div class="ai">AIが作成</div>';
-    }
-  }
-
   function runGen(transcript){
     var steps=['写真を ととのえています…','ことばから 紹介文を つくっています…','お知らせ文と SNS投稿を つくっています…'];
     var i=0,el=document.getElementById('o-genstep');
@@ -689,7 +546,6 @@
         document.getElementById('o-prod-note').innerHTML = '💬 '+data.note;
         window.__lastOwnerNotice = data.notice; // 客への通知文（現行UIには未表示。連携実装時に使用）
       }
-      applyResultImage();
       priceIndex=1;renderPrice(); // 新しい出品ごとに価格表示を初期値へ戻す
       go('owner','o4');
     }
@@ -699,18 +555,10 @@
       setTimeout(function(){finishGen(null);},1800);
       return;
     }
-    // B1(A案): 撮影した写真があれば image として一緒に送る。
-    // Lambda側が image を未対応でも無視されるだけなので、後方互換を壊さない拡張。
-    var payload={ transcript:transcript };
-    if(ownerPhotoDataUrl){
-      // "data:image/jpeg;base64,xxxx" の "xxxx" 部分のみ送る（Gemini inline_data用）
-      var base64Only = ownerPhotoDataUrl.split(',')[1];
-      payload.image = { mimeType:'image/jpeg', data:base64Only };
-    }
     fetch(GEMINI_ENDPOINT,{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(payload)
+      body:JSON.stringify({transcript:transcript})
     }).then(function(res){
       if(!res.ok) throw new Error('gemini lambda error');
       return res.json();
@@ -880,7 +728,6 @@
 
   var acts={
     ownerRecord:ownerRecord, replyRecord:replyRecord, cyclePrice:cyclePrice,
-    ownerCapture:ownerCapture,
     saveShop:saveShop,
     kininaru:function(){alert('「気になる」に保存しました');},
     toOwnerReply:function(){switchView('owner');go('owner','r1');}
@@ -898,11 +745,6 @@
   document.addEventListener('click',function(e){
     var el=e.target.closest('[data-go],[data-view],[data-act]');
     if(el){handle(el);}
-  });
-
-  // ページを離れる/隠れるときはカメラを止める（バッテリー・プライバシー配慮）
-  document.addEventListener('visibilitychange',function(){
-    if(document.hidden) stopCamera();
   });
 
   switchView('owner');
